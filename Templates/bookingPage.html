@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/booking-page.css' %}">
+</head>
+<body class="background" background="{% static 'images/ground.jpg' %}">
+<div>
+    {% if messages %}
+    {% for message in messages %}
+    {% if message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
+    <div class="alert alert-primary" role="alert">
+        <p style="align:center"><h6 style="color:red"><b>{{ message }}</b></h6></p>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+</div>
+<form action="bookTimeSlot" method="post" id="book" data-date-url="{% url 'ajax_load_available_timeSlot' %}"
+      data-price-url="{% url 'ajax_load_price' %}">
+    {% csrf_token %}
+    <div class="elem-group">
+        <label for="name">Your Name</label>
+        <input type="text" id="name" name="visitor_name" value="{{userDetails.first_name}}" pattern=[A-Z\sa-z]{3,20}
+               required readonly>
+    </div>
+    <div class="elem-group">
+        <label for="email">Your E-mail</label>
+        <input type="email" id="email" name="visitor_email" value="{{userDetails.email}}"
+               placeholder="john.doe@email.com" required readonly>
+    </div>
+    <div class="elem-group">
+        <label for="phone">Your Phone</label>
+        <input type="tel" id="phone" name="visitor_phone" pattern=(\d{3})-?\s?(\d{3})-?\s?(\d{4}) required>
+    </div>
+    <div class="elem-group inlined">
+        <label for="adult">Hours Needed</label>
+        <input type="number" id="adult" name="total_hours" min="1" max="1" required>
+    </div>
+    <div class="elem-group inlined">
+        <label for="checkin-date">Date</label>
+        <input type="date" id="checkin-date" name="book_date" required>
+    </div>
+    <!--<div class="elem-group inlined">
+      <label for="checkout-date">Check-out Date</label>
+      <input type="date" id="checkout-date" name="checkout" required>
+    </div>-->
+    <div class="elem-group">
+        <label for="timeslot">Select Hour Preference</label>
+        <select id="timeslot" name="hour_preference" required>
+            <option value="">Select the Date Field above to view time slots</option>
+        </select>
+    </div>
+    <div class="elem-group">
+        <label>Amount</label>
+
+        <input type="text" id="price" name="total_amount" readonly required>
+
+    </div>
+    <hr>
+    <div class="elem-group">
+        <label for="message">Anything Else?</label>
+        <textarea id="message" name="message" placeholder="Tell us anything else that might be important."></textarea>
+    </div>
+    <button type="submit">Book the Time Slot</button>
+
+</form>
+
+</body>
+<style>
+  .background {
+     background-color: #ffffff10;
+     backdrop-filter: blur(12px);
+     -webkit-backdrop-filter: blur(12px);
+     background-repeat: no-repeat;
+     background-size: cover;
+
+}
+
+</style>
+<script src="{% static 'js/booking-page.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+{% if booked %}
+<script>
+    alert('Booked Successfully');
+    window.location =  "{% url 'home' %}";
+
+</script>
+{% endif %}
+<script>
+     $("#checkin-date").change(function () {
+        const url = $("#book").attr("data-date-url");
+         const dateValue = $(this).val();
+         console.log(dateValue);
+         $.ajax({                       // initialize an AJAX request
+            url: url,                    // set the url of the request (= ajax/load_available_timeSlot/ )
+            data: {
+                'date_value': dateValue       // add the country id to the GET parameters
+            },
+             success: function (data) {   // `data` is the return of the `load_price` view function
+                 let html_data = '<option value="">Available Time Slots</option>';
+                data.forEach(function (times) {
+                    html_data += `<option value="${times.time_slot}">${times.time_slot}</option>`
+                });
+                console.log(html_data);
+                $("#timeslot").html(html_data);
+             }
+         });
+     });
+
+</script>
+<script>
+     $("#timeslot").change(function () {
+        const url = $("#book").attr("data-price-url");
+         const timeId = $(this).val();
+         console.log(timeId);
+         $.ajax({                       // initialize an AJAX request
+            url: url,                    // set the url of the request (= /persons/ajax/load-price/ )
+            data: {
+                'time_id': timeId       // add the country id to the GET parameters
+            },
+             success: function (price) {   // `data` is the return of the `load_price` view function
+                console.log(price);
+                 $('#price').val(price);
+             }
+         });
+     });
+
+</script>
+
+</html>
